@@ -1,0 +1,130 @@
+services:
+  catalogdb:
+    container_name: catalogdb
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  catalog.api:
+    container_name: catalogapi
+    image: catalogapi
+    build:
+      context: .
+      dockerfile: Catalog.API/Dockerfile
+    ports:
+      - "8080:8080"
+      - "8083:8082" # gRPC için yeni kapı
+    environment:
+      - "ASPNETCORE_ENVIRONMENT=Development"
+      - "DatabaseSettings:ConnectionString=mongodb://catalogdb:27017"
+      - "ASPNETCORE_HTTP_PORTS=8080"
+      - "ASPNETCORE_URLS=http://+:8080"
+    depends_on:
+      - catalogdb
+  basketdb:
+    container_name: basketdb
+    image: redis:latest
+    ports:
+      - "6379:6379"
+
+  basket.api:
+    container_name: basketapi
+    image: basketapi
+    build:
+      context: .
+      dockerfile: Basket.API/Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - "CacheSettings:ConnectionString=basketdb:6379"
+      - "EventBusSettings:HostAddress=rabbitmq"
+      - "ASPNETCORE_HTTP_PORTS=8081"
+      - "ASPNETCORE_URLS=http://+:8081"
+      - "ASPNETCORE_ENVIRONMENT=Development"
+    depends_on:
+      - basketdb
+      - rabbitmq
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"   # RabbitMQ iletişim portu
+      - "15672:15672" # RabbitMQ Yönetim Paneli (Arayüz)
+  orderingdb:
+    container_name: orderingdb
+    image: postgres
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=OrderDb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql  # <--- İşte sihirli dokunuş! bu sayede dosyalar kaydedilmiş olacak. Konteynırı silip yeniden oluştursan da veriler kalır.
+    restart: always
+  ordering.api:
+    container_name: orderingapi
+    image: orderingapi
+    build:
+      context: .
+      dockerfile: Ordering.API/Dockerfile
+    ports:
+      - "8082:8080"
+    environment:
+      - "ASPNETCORE_ENVIRONMENT=Development"
+      - "ASPNETCORE_URLS=http://+:8080"
+    depends_on:
+      - orderingdb
+      - rabbitmq
+  identity.api:
+    container_name: identityapi
+    image: identityapi
+    build:
+      context: .
+      dockerfile: Identity.API/Dockerfile
+    ports:
+      - "7282:8080" # Dışarıdan yine 7282 ile erişebilmek için
+    environment:
+      - "ASPNETCORE_ENVIRONMENT=Development"
+      - "ASPNETCORE_URLS=http://+:8080"
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+
+  kibana:
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:8.11.1
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+  
+  apigateway:
+    container_name: apigateway
+    image: apigateway
+    build:
+      context: .
+      dockerfile: ApiGateway/Dockerfile
+    ports:
+      - "8000:8080"
+    environment:
+      - "ASPNETCORE_ENVIRONMENT=Development"
+    depends_on:
+      - catalog.api
+      - basket.api
+      - ordering.api
+      - identity.api
+
+volumes:
+  mongo_data:
+  postgres_data:
