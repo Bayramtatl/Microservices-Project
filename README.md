@@ -52,7 +52,7 @@ Proje, istemciden gelen bir isteğin en güvenli ve izlenebilir yoldan hedefe ul
 ### **Adımlar**
 1.  Projeyi klonlayın:
     ```bash
-    git clone [https://github.com/kullaniciadin/Microservices-Project.git](https://github.com/kullaniciadin/Microservices-Project.git)
+    git clone [https://github.com/Bayramtatl/Microservices-Project.git](https://github.com/Bayramtatl/Microservices-Project.git)
     ```
 2.  Docker Compose ile tüm ekosistemi ayağa kaldırın:
     ```bash
@@ -147,7 +147,7 @@ The system ensures that every client request follows a secure and traceable path
 ### **Steps**
 1.  Clone the repository:
     ```bash
-    git clone [https://github.com/yourusername/Microservices-Project.git](https://github.com/yourusername/Microservices-Project.git)
+    git clone [https://github.com/Bayramtatl/Microservices-Project.git](https://github.com/Bayramtatl/Microservices-Project.git)
     ```
 2.  Spin up the entire ecosystem using Docker Compose:
     ```bash
